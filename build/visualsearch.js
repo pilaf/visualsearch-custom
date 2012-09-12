@@ -35,6 +35,7 @@
       query       : '',
       unquotable  : [],
       facetAutocompleteMinLength: 1,
+      facetOptions: {},
       remainder   : 'text',
       callbacks   : {
         search          : $.noop,
@@ -533,6 +534,11 @@ VS.ui.SearchFacet = Backbone.View.extend({
     this.flags = {
       canClose : false
     };
+
+    if (this.model.get('category') in this.options.app.options.facetOptions) {
+      _.defaults(this.options, this.options.app.options.facetOptions[this.model.get('category')]);
+    }
+
     _.bindAll(this, 'set', 'keydown', 'deselectFacet', 'deferDisableEdit');
   },
 
@@ -550,7 +556,12 @@ VS.ui.SearchFacet = Backbone.View.extend({
     this.box.bind('blur', this.deferDisableEdit);
     // Handle paste events with `propertychange`
     this.box.bind('input propertychange', this.keydown);
-    this.setupAutocomplete();
+
+    if (this.options.datePicker) {
+      this.setupDatePicker();
+    } else {
+      this.setupAutocomplete();
+    }
 
     return this;
   },
@@ -643,8 +654,12 @@ VS.ui.SearchFacet = Backbone.View.extend({
   // Closes the autocomplete menu. Called on disabling, selecting, deselecting,
   // and anything else that takes focus out of the facet's input field.
   closeAutocomplete : function() {
-    var autocomplete = this.box.data('autocomplete');
-    if (autocomplete) autocomplete.close();
+    if (this.options.datePicker) {
+      this.box.datepicker('hide');
+    } else {
+      var autocomplete = this.box.data('autocomplete');
+      if (autocomplete) autocomplete.close();
+    }
   },
 
   // Search terms used in the autocomplete menu. These are specific to the facet,
@@ -685,6 +700,27 @@ VS.ui.SearchFacet = Backbone.View.extend({
       }
     });
 
+  },
+
+  setupDatePicker: function() {
+    var options = {
+      showAnim: '',
+
+      onSelect: _.bind(function(dateVal, ui) {
+        var originalValue = this.model.get('value');
+        this.set(dateVal);
+        if (originalValue != dateVal || this.box.val() != dateVal) {
+          this.search({});
+        }
+        return false;
+      }, this)
+    };
+
+    if (typeof this.options.datePicker === 'object') {
+      _.extend(options, this.options.datePicker);
+    }
+
+    this.box.datepicker(options);
   },
 
   // Sets the facet's model's value.
