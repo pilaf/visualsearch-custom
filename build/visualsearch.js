@@ -31,19 +31,20 @@
 
   VS.VisualSearch = function(options) {
     var defaults = {
-      container   : '',
-      query       : '',
-      autosearch  : true,
-      unquotable  : [],
-      facetOptions: {},
-      remainder   : 'text',
-      showFacets  : true,
-      callbacks   : {
-        search          : $.noop,
-        focus           : $.noop,
-        blur            : $.noop,
-        facetMatches    : $.noop,
-        valueMatches    : $.noop
+      container          : '',
+      query              : '',
+      autosearch         : true,
+      unquotable         : [],
+      facetOptions       : {},
+      remainder          : 'text',
+      categorizeRemainder: false,
+      showFacets         : true,
+      callbacks          : {
+        search           : $.noop,
+        focus            : $.noop,
+        blur             : $.noop,
+        facetMatches     : $.noop,
+        valueMatches     : $.noop
       }
     };
     this.options           = _.extend({}, defaults, options);
@@ -1849,14 +1850,16 @@ VS.model.SearchFacet = Backbone.Model.extend({
     var category = this.quoteCategory(this.get('category'));
     var value    = VS.utils.inflector.trim(this.get('value'));
     var remainder = this.get("app").options.remainder;
+    var categorizeRemainder = this.get("app").options.categorizeRemainder;
 
     if (!value) return '';
 
-    if (!_.contains(this.get("app").options.unquotable || [], category) && category != remainder) {
+    if (!_.contains(this.get("app").options.unquotable || [], category) &&
+      (category != remainder || categorizeRemainder)) {
       value = this.quoteValue(value);
     }
 
-    if (category != remainder) {
+    if (category != remainder || categorizeRemainder) {
       category = category + ': ';
     } else {
       category = "";
@@ -1901,6 +1904,7 @@ VS.model.SearchFacet = Backbone.Model.extend({
 });
 
 })();
+
 (function() {
 
 var $ = jQuery; // Handle namespaced jQuery

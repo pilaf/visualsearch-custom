@@ -161,7 +161,6 @@
           container  : $('#search_box_container'),
           query      : 'country: "South Africa" account: 5-samuel "U.S. State": California',
           unquotable : [
-            'text',
             'account',
             'filter',
             'access'
@@ -171,6 +170,7 @@
               datePicker: true
             }
           },
+		  categorizeRemainder: true,
 		  showFacets: true,
           callbacks  : {
             search : function(query, searchCollection) {
