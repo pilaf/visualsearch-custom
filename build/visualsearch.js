@@ -629,6 +629,11 @@ VS.ui.SearchFacet = Backbone.View.extend({
       create    : _.bind(function(e, ui) {
         $(this.el).find('.ui-autocomplete-input').css('z-index','auto');
       }, this),
+      change    : _.bind(function(e, ui) {
+        if (ui.item || !this.options.enforceAutocomplete) return;
+        this.remove(e);
+        return false;
+      }, this),
       select    : _.bind(function(e, ui) {
         e.preventDefault();
         var originalValue = this.model.get('value');
@@ -940,17 +945,17 @@ VS.ui.SearchFacet = Backbone.View.extend({
   keydown : function(e) {
     var key = VS.app.hotkeys.key(e);
 
-    if (key == 'enter' && this.box.val()) {
+    if (key == 'enter' && this.box.val() && !this.options.enforceAutocomplete) {
       this.disableEdit();
       this.search(e);
-    } else if (key == 'left') {
+    } else if (key == 'left' && !this.options.enforceAutocomplete) {
       if (this.modes.selected == 'is') {
         this.deselectFacet();
         this.options.app.searchBox.focusNextFacet(this, -1, {startAtEnd: -1});
       } else if (this.box.getCursorPosition() == 0 && !this.box.getSelection().length) {
         this.selectFacet();
       }
-    } else if (key == 'right') {
+    } else if (key == 'right' && !this.options.enforceAutocomplete) {
       if (this.modes.selected == 'is') {
         e.preventDefault();
         this.deselectFacet();
@@ -961,14 +966,14 @@ VS.ui.SearchFacet = Backbone.View.extend({
         this.disableEdit();
         this.options.app.searchBox.focusNextFacet(this, 1);
       }
-    } else if (VS.app.hotkeys.shift && key == 'tab') {
+    } else if (VS.app.hotkeys.shift && key == 'tab' && !this.options.enforceAutocomplete) {
       e.preventDefault();
       this.options.app.searchBox.focusNextFacet(this, -1, {
         startAtEnd  : -1,
         skipToFacet : true,
         selectText  : true
       });
-    } else if (key == 'tab') {
+    } else if (key == 'tab' && !this.options.enforceAutocomplete) {
       e.preventDefault();
       this.options.app.searchBox.focusNextFacet(this, 1, {
         skipToFacet : true,
@@ -982,6 +987,16 @@ VS.ui.SearchFacet = Backbone.View.extend({
       this.options.app.searchBox.focusNextFacet(this, -1, {startAtEnd: -1});
       this.remove(e);
     } else if (key == 'backspace') {
+      $(document).on('keydown.backspace', function(e) {
+         if (VS.app.hotkeys.key(e) === 'backspace') {
+            e.preventDefault();
+         }
+      });
+
+      $(document).on('keyup.backspace', function(e) {
+         $(document).off('.backspace');
+      });
+
       if (this.modes.selected == 'is') {
         e.preventDefault();
         this.remove(e);
@@ -990,6 +1005,7 @@ VS.ui.SearchFacet = Backbone.View.extend({
         e.preventDefault();
         this.selectFacet();
       }
+       e.stopPropagation();
     }
 
     // Handle paste events
